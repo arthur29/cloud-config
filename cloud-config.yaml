@@ -2,35 +2,35 @@
 
 
 ---
-hostname: coreos1
+hostname: coreos22
 
 coreos:
   # Configuração do etcd2
   etcd2:
     # Nome da máquina no cluster. Deve ser único.
-    name: coreos1
+    name: coreos2
     # Nome do cluster, é usado para gerar os ids dos membros.
     # Deve ser único para cada cluster.
     initial-cluster-token: cluster
     # Membros iniciais do cluster. Deve conter todos os membros que compõe o cluster.
     # É uma lista de chave e valor, onde nome é a chave e advertise-peer-urls é o valor.
-    initial-cluster: coreos1=http://localhost:2380,default=http://localhost:7001
+    initial-cluster: coreos2=http://localhost:2380,coreos2=http://localhost:7001,coreos1=http://192.168.124.11:2380,coreos1=http://192.168.124.11:7001
     # Estado inicial do cluster. Para novos clusters, o valor é 'new'
     initial-cluster-state: new
     # Peer url que aparecerá em initial-cluster
-    initial-advertise-peer-urls: http://192.168.0.11:2380
+    initial-advertise-peer-urls: http://192.168.124.12:2380
     # Endereço para ouvir conexão de outros nós do cluster
-    listen-peer-urls: http://192.168.0.11:2380
+    listen-peer-urls: http://192.168.124.12:2380
     # Endereço que esse membro usa para ouvir conexões de clients
-    listen-client-urls: http://192.168.0.11:2379,http://127.0.0.1:2379
+    listen-client-urls: http://192.168.124.12:2379,http://127.0.0.1:2379
     # Endereço que esse membro usa para se comunicar com os outros
-    advertise-client-urls: http://192.168.0.11:2379
+    advertise-client-urls: http://192.168.124.12:2379
   # Configuração do fleet
   fleet:
-    public-ip: 192.168.0.11
+    public-ip: 192.168.124.12
   # Configuração do flannel
   flannel:
-    public-ip: 192.168.0.11
+    public-ip: 192.168.124.12
   # Configurando units (como services e sockets)
   units:
     # manipulando a unit do etcd2
@@ -58,7 +58,7 @@ coreos:
         Name=ens3
 
         [Network]
-        Address=192.168.0.11/24
+        Address=192.168.124.12/24
     # Configurando o socket do docker para ouvir na porta 2375
     - name: docker-tcp.socket
       command: start
