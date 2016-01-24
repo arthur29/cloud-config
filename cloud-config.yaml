@@ -1,0 +1,84 @@
+#cloud-config
+
+
+---
+hostname: coreos1
+
+coreos:
+  # Configuração do etcd2
+  etcd2:
+    # Nome da máquina no cluster. Deve ser único.
+    name: coreos1
+    # Nome do cluster, é usado para gerar os ids dos membros.
+    # Deve ser único para cada cluster.
+    initial-cluster-token: cluster
+    # Membros iniciais do cluster. Deve conter todos os membros que compõe o cluster.
+    # É uma lista de chave e valor, onde nome é a chave e advertise-peer-urls é o valor.
+    initial-cluster: coreos1=http://localhost:2380,default=http://localhost:7001
+    # Estado inicial do cluster. Para novos clusters, o valor é 'new'
+    initial-cluster-state: new
+    # Peer url que aparecerá em initial-cluster
+    initial-advertise-peer-urls: http://192.168.0.11:2380
+    # Endereço para ouvir conexão de outros nós do cluster
+    listen-peer-urls: http://192.168.0.11:2380
+    # Endereço que esse membro usa para ouvir conexões de clients
+    listen-client-urls: http://192.168.0.11:2379,http://127.0.0.1:2379
+    # Endereço que esse membro usa para se comunicar com os outros
+    advertise-client-urls: http://192.168.0.11:2379
+  # Configuração do fleet
+  fleet:
+    public-ip: 192.168.0.11
+  # Configuração do flannel
+  flannel:
+    public-ip: 192.168.0.11
+  # Configurando units (como services e sockets)
+  units:
+    # manipulando a unit do etcd2
+    - name: etcd2.service
+      # startando etcd2 com o sistema
+      command: start
+    # manipulando a unit do fleet
+    - name: fleet.service
+      # startando o fleet com o sistema
+      command: start
+    # manipulando a unit do flannel
+    - name: flanneld.service
+      # adicionando um system drop in ao flannel
+      drop-ins:
+      # criando a rede interna usada pelo flannel
+      - name: 50-network-config.conf
+        content: |
+          [Service]
+          ExecStartPre=/usr/bin/etcdctl set /coreos.com/network/config '{ "Network": "192.168.0.0/16" }'
+    # Configurando a interface de rede interna usada pelo cluster
+    - name: 10-ens3.network
+      runtime: true
+      content: |
+        [Match]
+        Name=ens3
+
+        [Network]
+        Address=192.168.0.11/24
+    # Configurando o socket do docker para ouvir na porta 2375
+    - name: docker-tcp.socket
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Description=Docker Socket for the API
+
+        [Socket]
+        ListenStream=2375
+        Service=docker.service
+        BindIPv6Only=both
+
+        [Install]
+        WantedBy=sockets.target
+users:
+- name: core
+  homedir: /home/core
+  groups:
+  - sudo
+  - docker
+  ssh_authorized_keys:
+  - 
